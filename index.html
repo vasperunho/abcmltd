@@ -15,12 +15,16 @@
     <div class="body-container">
         <h1>Commercial League Scouting</h1>
         
-        <div class="team-stats-container">
-			<div class="input-group mb-3">
-				<span class="input-group-text" id="basic-basket-icon">🏀</span>
-				<select id="team-select" class="form-control" onchange="loadTeamData(this.value)" placeholder="Επιλογή ομάδας" aria-label="team-select" aria-describedby="basic-basket-icon">
-					<option value="">-- Φορτώνει Ομάδες... --</option>
-				</select>
+        <div class="team-stats-container row">
+				<div class="col-12">			
+					<div class="input-group mb-3">			
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="basic-basket-icon">🏀</label>
+						</div>
+						<select id="team-select" class="form-control" onchange="loadTeamData(this.value)" placeholder="Επιλογή ομάδας" aria-label="team-select" aria-describedby="basic-basket-icon">
+							<option value="">-- Φορτώνει Ομάδες... --</option>
+						</select>
+					</div>
 			</div>
 			<div id="loading-message" class="justify-content-center">
 				<div class="spinner-border" role="status">
@@ -30,7 +34,7 @@
 
 			<div id="team-stats-content" class="team-stats-container row hidden">	
 				<h2>Ρόστερ</h2>			
-				<div id="team-roster-content" class="roster-container col-6">
+				<div id="team-roster-content" class="roster-container col-xl-6 col-sm-12"  style="overflow-x: auto;">
 					<table id="team-roster-table" class="display" style="width:100%">
 						<thead>
 							<tr>
@@ -57,7 +61,7 @@
 				</div>
 				
     
-				<div id="playerModal" class=" col-6 hidden">
+				<div id="playerModal" class=" col-xl-6 col-sm-12 hidden"  style="overflow-x: auto;">
 					<div class="modal-content">
 						<div id="player-info-modal">
 							<div id="player-stats-modal-controls">
@@ -76,11 +80,10 @@
     </div>
     
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
-    <script type="text/javascript" src="https://d3js.org/d3.v7.min.js"></script>
-	<script type="text/javascript" src="heatmap.js"></script>    
-    <script type="text/javascript" src="script.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+	<script src="heatmap.js"></script>    
+    <script src="script.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
-
 </html>
