@@ -1,0 +1,106 @@
+:root {
+    --gold-gradient: linear-gradient(45deg, #A67C00, #FFDF8B, #EDCA66, #F0E7BF, #A67C00);
+    --silver-gradient: linear-gradient(45deg, #7B7B7B, #D8D8D8, #ABABAB, #EBEBEB, #7B7B7B);
+    --bronze-gradient: linear-gradient(45deg, #AD8A56, #cfa68c, #fed8b2, #cfa68c, #AD8A56);
+}
+@keyframes gradient-shift {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+body {
+}
+.body-container { padding:20px;}
+.team-stats-container, .roster-container {
+}
+/* Στυλ για τον πίνακα Shot Chart */
+#shot-chart-container {
+    display: flex; 
+}
+/* Στυλ για το ρόστερ (clickable rows) */
+#team-roster-table tbody tr {
+    cursor: pointer;
+}
+/* POPUP MODAL */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 10; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.7); 
+}
+.modal-content {
+	
+	width: 95% !important; /* Αυξάνουμε το πλάτος για να χωράνε οι πίνακες */
+    max-width: 1200px !important;
+}
+
+#player-stats-content table, 
+#modal-per-game-table, 
+#team-roster-table {
+    width: 100%;
+    border-collapse: collapse; /* Εξασφαλίζει ότι τα κελιά εφάπτονται */
+    margin-top: 10px;
+    background-color: white; /* Χρώμα φόντου */
+}
+#player-stats-content th, #player-stats-content td, 
+#modal-per-game-table th, #modal-per-game-table td, 
+#team-roster-table th, #team-roster-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+#player-stats-content th, #modal-per-game-table th, #team-roster-table th {
+    background-color: #f2f2f2;
+    color: #333;
+    font-weight: bold;
+}
+#team-roster-table tr.active{ color: #fff !important; background-color: RGBA(var(--bs-success-rgb), var(--bs-bg-opacity, 1)) !important; }
+#team-roster-table tr.disabled{ color: #909090 !important; background-color: RGBA(var(--bs-light-rgb), var(--bs-bg-opacity, 0.3)) !important; }
+
+#modal-combined-table tr.active{ color: #fff !important; background-color: RGBA(var(--bs-success-rgb), var(--bs-bg-opacity, 1)) !important; }
+
+
+/* Στυλ για τον πίνακα Shot Chart */
+#shot-chart-container {
+	width: 800px; /* Σταθερό πλάτος για το heatmap */
+    height: 450px; 
+    margin: 0 auto; /* Κεντράρισμα */
+    position: relative;
+    background-color: #000033;
+    border-radius: 8px;
+    background-color: #000033; /* Σκούρο φόντο για το γήπεδο */
+	background:url("halfcourt.png") no-repeat center / 100% 100%;
+}
+/* Στυλ για τη γραμμή μέσου όρου */
+#modal-combined-table tfoot td {
+    color: #0d47a1;
+    border-top: 2px solid #2196F3 !important;
+}
+.hidden{display:none!important;}
+
+#loading-message{background-color:rgba(0,0,0,.1);position:fixed; top:0; bottom:0; left:0; right:0; color: blue; display: flex;z-index:1000;}
+#loading-message .spinner-border{position: absolute;top: 50%;}
+.badge.bestof { margin-right:8px; border:1px solid #909090; color: #303030;background-size: 200% 200%;animation: gradient-shift 5s ease infinite;}
+#team-roster-table .badge.bestof { width: 40px;}
+.badge.badge-type-gold {
+	background: var(--gold-gradient);
+}
+.badge.badge-type-silver {
+	background: var(--silver-gradient);
+}
+.badge.badge-type-bronze{
+	background: var(--bronze-gradient);
+}
+.player-img{ height: 60px; width: 60px; background-size: cover; border-radius:50%;}
