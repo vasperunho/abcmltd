@@ -2,6 +2,7 @@
     --gold-gradient: linear-gradient(45deg, #A67C00, #FFDF8B, #EDCA66, #F0E7BF, #A67C00);
     --silver-gradient: linear-gradient(45deg, #7B7B7B, #D8D8D8, #ABABAB, #EBEBEB, #7B7B7B);
     --bronze-gradient: linear-gradient(45deg, #AD8A56, #cfa68c, #fed8b2, #cfa68c, #AD8A56);
+	.nav { --bs-nav-link-color: #c0c0c0; --bs-nav-link-hover-color: #909090;}
 }
 @keyframes gradient-shift {
 	0% {
@@ -21,26 +22,15 @@ body {
 .team-stats-container, .roster-container {
 }
 /* Στυλ για τον πίνακα Shot Chart */
-#shot-chart-container {
+#shot-map {
     display: flex; 
 }
 /* Στυλ για το ρόστερ (clickable rows) */
 #team-roster-table tbody tr {
     cursor: pointer;
 }
-/* POPUP MODAL */
-.modal {
-    display: none; 
-    position: fixed; 
-    z-index: 10; 
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.7); 
-}
-.modal-content {
+
+.statistic-content {
 	
 	width: 95% !important; /* Αυξάνουμε το πλάτος για να χωράνε οι πίνακες */
     max-width: 1200px !important;
@@ -51,9 +41,9 @@ body {
 #team-roster-table {
     width: 100%;
     border-collapse: collapse; /* Εξασφαλίζει ότι τα κελιά εφάπτονται */
-    margin-top: 10px;
     background-color: white; /* Χρώμα φόντου */
 }
+#team-roster-content div.dt-container div.dt-layout-cell{ padding-top: 0px;}
 #player-stats-content th, #player-stats-content td, 
 #modal-per-game-table th, #modal-per-game-table td, 
 #team-roster-table th, #team-roster-table td {
@@ -71,9 +61,10 @@ body {
 
 #modal-combined-table tr.active{ color: #fff !important; background-color: RGBA(var(--bs-success-rgb), var(--bs-bg-opacity, 1)) !important; }
 
+.player-chart-container { max-width: 500px; margin:0 auto;}
 
 /* Στυλ για τον πίνακα Shot Chart */
-#shot-chart-container {
+#shot-map {
 	width: 800px; /* Σταθερό πλάτος για το heatmap */
     height: 450px; 
     margin: 0 auto; /* Κεντράρισμα */

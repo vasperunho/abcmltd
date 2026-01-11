@@ -23,12 +23,58 @@ async function fetchData(url) {
     }
 }
 
+function mapApiData(data) {
+
+    const processedStats = data.stats.map((s, index) => {
+        const totalRebounds = s.offensiveRebounds + s.defensiveRebounds;
+        const totalFGM = s.twoPointsMade + s.threePointsMade;
+        const totalFGA = s.twoPointAttempts + s.threePointAttempts;
+        
+        return {
+            matchId: s.matchId,
+            round: s.round,
+            game: index + 1,
+            opponent: s.opponentTeamName,
+            date: new Date(s.matchDatetime).toLocaleDateString('el-GR'),
+            pts: s.points,
+            reb: totalRebounds, 
+            ast: s.assists,
+            stl: s.steals,
+            blk: s.blockedShots,
+            to: s.turnovers,
+            pf: s.personalFouls + s.technicalFouls + s.unsportsmanlikeFouls, 
+            pir: s.pir,
+            fgm: totalFGM, 
+            fga: totalFGA, 
+            tpm: s.threePointsMade,
+            tpa: s.threePointAttempts,
+            ftm: s.freeThrowsMade,
+            fta: s.freeThrowAttempts,
+            shots: s.throwPositions ? s.throwPositions.map(tp => ({ 
+                x: tp.x, 
+                y: tp.y, 
+                made: tp.throwStatus === 'made' 
+            })) : []
+        };
+    });
+
+    return processedStats;
+}
+
+
 // Βοηθητική συνάρτηση για υπολογισμό ποσοστού
 const calculatePercentage = (made, attempted) => {
-    return attempted > 0 ? ((made / attempted) * 100).toFixed(1) : '0.0';
+    return parseFloat(attempted > 0 ? ((made / attempted) * 100).toFixed(1) : '0.0');
 };
 
 // --- 1. Φόρτωση Ομάδων στο Dropdown ---
+
+function updateMaxValues(targetObj, sourceStats) {
+    const keys = ['pts', 'pir', 'reb', 'ast', 'stl', 'blk', 'to', 'pf'];
+    keys.forEach(key => {
+        targetObj[key] = Math.max(targetObj[key] || 0, sourceStats[key] || 0);
+    });
+}
 
 async function loadTeamsDropdown() {
     const select = document.getElementById('team-select');
@@ -41,7 +87,8 @@ async function loadTeamsDropdown() {
     // Χρησιμοποιούμε τη λογική που επιβεβαιώθηκε από εσάς (ο πίνακας είναι το ίδιο το data)
     if (Array.isArray(data) && data.length > 0) {
         select.innerHTML = '<option value="">-- Επιλέξτε Ομάδα --</option>';
-        data.forEach(rankingItem => {
+		window.statsMaxValues={ pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0, pir: 0, fg: 100, tp: 100, ft: 100 };
+        const promises = data.map(async (rankingItem) => {
             // Ελέγχουμε αν η πληροφορία είναι στο 'team' ή απευθείας στο rankingItem
             const team = rankingItem.team || rankingItem; 
             
@@ -50,12 +97,87 @@ async function loadTeamsDropdown() {
                 option.value = team.id;
                 option.textContent = team.name;
                 select.appendChild(option);
+			
+				const teamUrl = API_URLS.TEAM_ROSTER.replace('{id}', team.id);
+				window.teamsData = window.teamsData || [];
+				window.teamsData[team.id] = window.teamsData[team.id] || (await fetchData(teamUrl));
+				window.teamsData[team.id].stats = window.teamsData[team.id].stats || mapTeamTotalStats(window.teamsData[team.id].players);
+					
+				window.teamsData[team.id].stats.forEach(game => {					
+					updateMaxValues(window.statsMaxValues, game);
+				});
+				window.teamsData[team.id].statsMaxValues = {
+					pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0, pir: 0, fg: 100, tp: 100, ft: 100 
+				};
+				window.teamsData[team.id].players.forEach(player => {
+					if (player.stats && Array.isArray(player.stats)) {
+						const playerMatches = mapApiData(player);
+						
+						playerMatches.forEach(game => {
+							updateMaxValues(window.teamsData[team.id].statsMaxValues, game);
+						});
+					}
+				});
             }
         });
+		
+		// 2. Περιμένουμε την ολοκλήρωση όλων των promises
+		Promise.all(promises).then(() => {
+			Object.values(window.teamsData).forEach(team => {
+				const numGames = team.stats.length;
+				const totals = {
+					pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0, pir: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0
+				};
+				
+				team.opponent = team.opponent || {};
+				team.opponent.statsTotal = {
+					pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0, pir: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0
+				};
+				team.opponent.statsAverages = {};
+				
+				team.stats.forEach(game => {
+					
+					Object.keys(totals).forEach(key => {
+						totals[key] += game[key] || 0;
+					});
+					
+					const opponentId = (Object.values(window.teamsData).find(team => { return team.name === game.opponent; }) || {}).id;
+					const matchId = game.matchId;
+
+					// Βρίσκουμε την αντίπαλη ομάδα στο global object μας
+					const opponentTeam = window.teamsData[opponentId];
+
+					if (opponentTeam) {
+						// Βρίσκουμε το ίδιο ματς στα stats του αντιπάλου
+						const opponentGameStats = opponentTeam.stats.find(s => s.matchId === matchId);
+						
+						if (opponentGameStats) {
+							game.opponentStats = {};
+							const statsKeys = ['pts', 'reb', 'ast', 'stl', 'blk', 'to', 'pf', 'pir', 'fgm', 'fga', 'tpm', 'tpa', 'ftm', 'fta'];
+							
+							statsKeys.forEach(key => {
+								game.opponentStats[key] = opponentGameStats[key] || 0;
+								team.opponent.statsTotal[key] += opponentGameStats[key] || 0;
+							});
+						}
+					}
+				});
+				
+				// Υπολογισμός Μέσου Όρου
+				const averages = {};
+				Object.keys(totals).forEach(key => {
+					averages[key] = parseFloat((totals[key] / numGames).toFixed(1));
+					team.opponent.statsAverages[key] = parseFloat((team.opponent.statsTotal[key] / numGames).toFixed(1));
+				});
+				team.statsTotal=totals;
+				team.statsAVG=averages;
+			});
+			document.getElementById('loading-message').classList.add("hidden");
+		});
     } else {
         select.innerHTML = '<option value="">Αδυναμία φόρτωσης ομάδων ή κενό ranking</option>';
     }
-    document.getElementById('loading-message').classList.add("hidden");
+
 }
 
 // --- 2. Φόρτωση Στατιστικών Ομάδας και Ρόστερ ---
@@ -69,26 +191,25 @@ async function loadTeamData(teamId) {
     document.getElementById('loading-message').classList.remove("hidden");
     document.getElementById('team-stats-content').classList.add('hidden');
     
-    const teamUrl = API_URLS.TEAM_ROSTER.replace('{id}', teamId);
-	window.teamsData = window.teamsData || [];
-	window.teamsData[teamId] = window.teamsData[teamId] || (await fetchData(teamUrl));
     window.currentTeamData = window.teamsData[teamId];
     if (!window.currentTeamData) return;
 	
 	// Εμφάνιση Στατιστικών Ομάδας (Placeholder)
-	loadRoster();
+	refreshTeamRosterTable();
     let teamStats = mapTeamTotalStats();
-	initStats(teamStats);
+	refreshStatisticsTable(teamStats);
+	refreshStatisticsChart(teamStats);
     updateShotChartFromMatches(teamStats);
 	document.getElementById('team-stats-content').classList.remove('hidden');
     document.getElementById('loading-message').classList.add("hidden");
 }
-function mapTeamTotalStats() {
+
+function mapTeamTotalStats(playersData) {
 	
     // Αντικείμενο για την ομαδοποίηση ανά αγώνα
     let matchesMap = {}; 
     let teamAllShots = [];
-    const players = (window.currentTeamData.players || []);
+    const players = (playersData || window.currentTeamData.players || []);
 
     players.forEach(pd => {
         const playerMatches = mapApiData(pd);
@@ -101,7 +222,7 @@ function mapTeamTotalStats() {
                 matchesMap[mId] = { 
                     matchId: mId, round: s.round, game: s.game, date: s.date, opponent: s.opponent, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, 
                     to: 0, pf: 0, pir: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, 
-                    ftm: 0, fta: 0, shots: [] 
+                    ftm: 0, fta: 0, shots: [], players: 0
                 };
             }
 
@@ -112,17 +233,31 @@ function mapTeamTotalStats() {
             m.pir += s.pir; m.fgm += s.fgm; m.fga += s.fga;
             m.tpm += s.tpm; m.tpa += s.tpa; m.ftm += s.ftm; m.fta += s.fta;
             m.shots = m.shots.concat(s.shots || []);
+			m.players++;
             
             // Για το συνολικό heatmap όλης της ομάδας
             teamAllShots = teamAllShots.concat(s.shots || []);
         });
     });
+	let result = Object.values(matchesMap);
+	result.map(m => { 
+		m.pir = parseFloat((m.pir / m.players).toFixed(1)); 
+		m.pts = parseFloat(m.pts.toFixed(1)); 
+		m.ast = parseFloat(m.ast.toFixed(1)); 
+		m.stl = parseFloat(m.stl.toFixed(1)); 
+		m.blk = parseFloat(m.blk.toFixed(1)); 
+		m.to = parseFloat(m.to.toFixed(1)); 
+		m.pf = parseFloat(m.pf.toFixed(1)); 
+		m.fg = parseFloat((m.fgm / m.fga).toFixed(1)); 
+		m.tp = parseFloat((m.tpm / m.tpa).toFixed(1)); 
+		m.ft = parseFloat((m.ftm / m.fta).toFixed(1)); 
+	});
 
     // Μετατροπή του map σε πίνακα για να τον εμφανίσουμε
-    return Object.values(matchesMap);
+    return result;
 }
 
-function loadRoster() {
+function refreshTeamRosterTable() {
     if ($.fn.DataTable.isDataTable('#team-roster-table')) {
         $('#team-roster-table').DataTable().destroy();
         $('#team-roster-table tbody').empty();
@@ -176,7 +311,7 @@ function loadRoster() {
         const avgPir = games > 0 ? (totalPir / games).toFixed(1) : '0.0';
 
         const row = tbody.insertRow();
-        if(player.stats.length > 0) row.setAttribute('onclick', `loadPlayerStatsModal(${player.id})`); 
+        if(player.stats.length > 0) row.setAttribute('onclick', `refreshStatistics(${player.id})`); 
 		else {
 			row.setAttribute('disabled', 'disabled'); 
 			row.classList.add('disabled'); 
@@ -205,14 +340,15 @@ function loadRoster() {
     });
 }
 
-// --- 3. Φόρτωση Στατιστικών Παίκτη σε Pop-up (Modal) ---
+// --- 3. Φόρτωση Στατιστικών Παίκτη ---
 
-async function loadPlayerStatsModal(playerId) {
+async function refreshStatistics(playerId) {
 	if(this.event.currentTarget.classList.contains('active')) {
 		this.event.currentTarget.parentNode.querySelector('.active')?.classList.remove("active");
-		closeModal();
+		hideStatistics();
 		let teamStats = mapTeamTotalStats();
-		initStats(teamStats);
+		refreshStatisticsTable(teamStats);
+		refreshStatisticsChart(teamStats);
 		updateShotChartFromMatches(teamStats);
 		return;
 	}
@@ -231,11 +367,12 @@ async function loadPlayerStatsModal(playerId) {
     const mappedData = mapApiData(rawPlayerData);
 
     // Κλήση της νέας ενιαίας συνάρτησης
-    initStats(mappedData); 
+    refreshStatisticsTable(mappedData); 
+	refreshStatisticsChart(mappedData);
     updateShotChartFromMatches(mappedData);
 }
 
-function initStats(playerData) {
+function refreshStatisticsTable(playerData) {
     const stats = playerData; 
     if (!stats) return;
 
@@ -269,7 +406,16 @@ function initStats(playerData) {
         const isSelected = window.selectedMatchIds.includes(s.matchId.toString()) ? 'table-primary active' : '';
         html += `
             <tr class="match-row ${isSelected}" data-matchid="${s.matchId}" style="cursor:pointer">
-                <td>${s.game}</td><td>${s.opponent} (${s.date})</td><td>${s.pts}</td><td>${s.pir}</td><td>${s.reb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.to}</td><td>${s.pf}</td>
+                <td>${s.game}</td>
+				<td>${s.opponent} (${s.date})</td>
+				<td>${s.pts}</td>
+				<td>${s.pir}</td>
+				<td>${s.reb}</td>
+				<td>${s.ast}</td>
+				<td>${s.stl}</td>
+				<td>${s.blk}</td>
+				<td>${s.to}</td>
+				<td>${s.pf}</td>
                 <td data-sort="${s.fgm / s.fga || 0}">${s.fgm}/${s.fga} (${calculatePercentage(s.fgm, s.fga)}%)</td>
                 <td data-sort="${s.tpm / s.tpa || 0}">${s.tpm}/${s.tpa} (${calculatePercentage(s.tpm, s.tpa)}%)</td>
                 <td data-sort="${s.ftm / s.fta || 0}">${s.ftm}/${s.fta} (${calculatePercentage(s.ftm, s.fta)}%)</td>
@@ -281,11 +427,15 @@ function initStats(playerData) {
                 </tbody>
                 <tfoot style="background-color: #e8f4fd; font-weight: bold; border-top: 2px solid #2196F3;">
                     <tr>
-                        <td>-</td><td>ΜΕΣΟΣ ΟΡΟΣ (${totals.games} Αγώνες)</td>
-                        <td>${avg(totals.pts)}</td><td>${avg(totals.pir)}</td>
-                        <td>${avg(totals.reb)}</td><td>${avg(totals.ast)}</td>
-                        <td>${avg(totals.stl)}</td><td>${avg(totals.blk)}</td>
-                        <td>${avg(totals.to)}</td><td>${avg(totals.pf)}</td>
+                        <td>Μ.Ο.</td><td>${totals.games} Αγώνες</td>
+                        <td>${avg(totals.pts)}</td>
+						<td>${avg(totals.pir)}</td>
+                        <td>${avg(totals.reb)}</td>
+						<td>${avg(totals.ast)}</td>
+                        <td>${avg(totals.stl)}</td>
+						<td>${avg(totals.blk)}</td>
+                        <td>${avg(totals.to)}</td>
+						<td>${avg(totals.pf)}</td>
                         <td>${avg(totals.fgm)}/${avg(totals.fga)} (${calculatePercentage(totals.fgm, totals.fga)}%)</td>
                         <td>${avg(totals.tpm)}/${avg(totals.tpa)} (${calculatePercentage(totals.tpm, totals.tpa)}%)</td>
                         <td>${avg(totals.ftm)}/${avg(totals.fta)} (${calculatePercentage(totals.ftm, totals.fta)}%)</td>
@@ -293,7 +443,6 @@ function initStats(playerData) {
                 </tfoot>
             </table>
         </div>
-        <hr style="margin: 30px 0;">
     `;
 
     contentDiv.innerHTML = html;
@@ -318,83 +467,259 @@ function initStats(playerData) {
 					this.classList.add('table-primary', 'active');
 				}
 				
-				// Φιλτράρισμα και κλήση της δικής σου initShotChart
+				// Φιλτράρισμα και κλήση της δικής σου refreshShotHeatmap
 				updateShotChartFromMatches(stats);
 			});
 		});
     
-		document.getElementById('playerModal').classList.remove('hidden');
+		document.getElementById('statisticContainer').classList.remove('hidden');
 		document.getElementById('loading-message').classList.add("hidden");	
     }, 100);
 }
 
-function closeModal() {
-    document.getElementById('playerModal').classList.add('hidden');
+function refreshStatisticsChart(playerData) {
+    const stats = playerData; 
+    if (!stats || stats.length === 0) return;
+
+    const pcr = document.getElementById('player-chart-radar');
+	if (!!window.playerChartRadar) {
+        window.playerChartRadar.destroy();
+    }
+
+    // 1. Υπολογισμός Μέσων Όρων (Totals)
+    const totals = stats.reduce((acc, s) => {
+        acc.games += 1; acc.pts += s.pts; acc.reb += s.reb; acc.ast += s.ast; 
+        acc.stl += s.stl; acc.blk += s.blk; acc.to += s.to; acc.pf += s.pf; 
+        acc.pir += s.pir; acc.fgm += s.fgm; acc.fga += s.fga; 
+        acc.tpm += s.tpm; acc.tpa += s.tpa; acc.ftm += s.ftm; acc.fta += s.fta;
+        return acc;
+    }, { games: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0, pir: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0 });
+
+    const avg = (total) => parseFloat((total / totals.games).toFixed(1));
+	
+	var colors = [
+		"#d64161",
+		"#ff7b25",
+		"#feb236",
+		"#6b5b95",
+		
+		"#878f99",
+		"#b2ad7f",
+		"#a2b9bc",
+		"#92a8d1",
+		
+		"#c94c4c",
+		"#f7786b",
+		"#034f84",
+		"#deeaee",
+		
+		"#82b74b",
+		"#405d27",
+		"#50394c",
+		"#ffef96",
+	];
+	let datasets=[];
+	let idxColor=0;
+	const isTeamChart = (stats[0].players || 1) !== 1;
+	const statsMaxValues = !isTeamChart ? window.currentTeamData.statsMaxValues : window.statsMaxValues;
+    stats.forEach(s => {
+		const color=colors[idxColor++];
+		datasets.push(
+		{
+			label: `${s.opponent} (${s.date})`,
+			data: [
+				s.pts / statsMaxValues["pts"], 
+				s.pir / statsMaxValues["pir"], 
+				s.reb / statsMaxValues["reb"], 
+				s.ast / statsMaxValues["ast"], 
+				s.stl / statsMaxValues["stl"], 
+				s.blk / statsMaxValues["blk"], 
+				s.to / statsMaxValues["to"], 
+				s.pf / statsMaxValues["pf"], 
+				calculatePercentage(s.fgm, s.fga) / statsMaxValues["fg"], 
+				calculatePercentage(s.tpm, s.tpa) / statsMaxValues["tp"], 
+				calculatePercentage(s.ftm, s.fta) / statsMaxValues["ft"]
+			],
+			fill: true,
+			backgroundColor: `${color}30`,
+			borderColor: `${color}`,
+			pointBackgroundColor: `${color}`,
+			pointBorderColor: '#fff',
+			pointHoverBackgroundColor: '#fff',
+			pointHoverBorderColor: `${color}`
+		});
+    });
+	
+	let avgDataset=[{
+		label: ( isTeamChart ? window.currentTeamData.name : `Μέσος όρος` ),
+		data: [
+			avg(totals.pts) / statsMaxValues["pts"], 
+			avg(totals.pir) / statsMaxValues["pir"], 
+			avg(totals.reb) / statsMaxValues["reb"], 
+			avg(totals.ast) / statsMaxValues["ast"], 
+			avg(totals.stl) / statsMaxValues["stl"], 
+			avg(totals.blk) / statsMaxValues["blk"], 
+			avg(totals.to) / statsMaxValues["to"], 
+			avg(totals.pf) / statsMaxValues["pf"], 
+			calculatePercentage(avg(totals.fgm), avg(totals.fga)) / statsMaxValues["fg"], 
+			calculatePercentage(avg(totals.tpm), avg(totals.tpa)) / statsMaxValues["tp"], 
+			calculatePercentage(avg(totals.ftm), avg(totals.fta)) / statsMaxValues["ft"]
+		],
+		fill: true,
+		backgroundColor: `#878f9930`,
+		borderColor: `#878f99`,
+		pointBackgroundColor: `#878f99`,
+		pointBorderColor: '#fff',
+		pointHoverBackgroundColor: '#fff',
+		pointHoverBorderColor: `#878f99`
+	}];
+	
+	if(isTeamChart){
+		const against = window.currentTeamData.opponent.statsAverages;
+		avgDataset.push({
+			label: window.currentTeamData.name + " (παθητικό)",
+			data: [
+				against.pts / statsMaxValues["pts"], 
+				against.pir / statsMaxValues["pir"], 
+				against.reb / statsMaxValues["reb"], 
+				against.ast / statsMaxValues["ast"], 
+				against.stl / statsMaxValues["stl"], 
+				against.blk / statsMaxValues["blk"], 
+				against.to / statsMaxValues["to"], 
+				against.pf / statsMaxValues["pf"], 
+				calculatePercentage(against.fgm, against.fga) / statsMaxValues["fg"], 
+				calculatePercentage(against.tpm, against.tpa) / statsMaxValues["tp"], 
+				calculatePercentage(against.ftm, against.fta) / statsMaxValues["ft"]
+			],
+			fill: true,
+			backgroundColor: `#82b74b30`,
+			borderColor: `#82b74b`,
+			pointBackgroundColor: `#82b74b`,
+			pointBorderColor: '#fff',
+			pointHoverBackgroundColor: '#fff',
+			pointHoverBorderColor: `#82b74b`
+		});		
+	}
+	
+	if(window.currentTeamData.id !== 39 && isTeamChart){
+		const ourStats = window.teamsData[39].statsAVG;
+		avgDataset.push({
+			label: window.teamsData[39].name,
+			data: [
+				ourStats.pts / statsMaxValues["pts"], 
+				ourStats.pir / statsMaxValues["pir"], 
+				ourStats.reb / statsMaxValues["reb"], 
+				ourStats.ast / statsMaxValues["ast"], 
+				ourStats.stl / statsMaxValues["stl"], 
+				ourStats.blk / statsMaxValues["blk"], 
+				ourStats.to / statsMaxValues["to"], 
+				ourStats.pf / statsMaxValues["pf"], 
+				calculatePercentage(ourStats.fgm, ourStats.fga) / statsMaxValues["fg"], 
+				calculatePercentage(ourStats.tpm, ourStats.tpa) / statsMaxValues["tp"], 
+				calculatePercentage(ourStats.ftm, ourStats.fta) / statsMaxValues["ft"]
+			],
+			fill: true,
+			backgroundColor: `#7098E530`,
+			borderColor: `#7098E5`,
+			pointBackgroundColor: `#7098E5`,
+			pointBorderColor: '#fff',
+			pointHoverBackgroundColor: '#fff',
+			pointHoverBorderColor: `#7098E5`
+		});
+		const ourAgainst = window.teamsData[39].opponent.statsAverages;
+		avgDataset.push({
+			label: window.teamsData[39].name + " (παθητικό)",
+			data: [
+				ourAgainst.pts / statsMaxValues["pts"], 
+				ourAgainst.pir / statsMaxValues["pir"], 
+				ourAgainst.reb / statsMaxValues["reb"], 
+				ourAgainst.ast / statsMaxValues["ast"], 
+				ourAgainst.stl / statsMaxValues["stl"], 
+				ourAgainst.blk / statsMaxValues["blk"], 
+				ourAgainst.to / statsMaxValues["to"], 
+				ourAgainst.pf / statsMaxValues["pf"], 
+				calculatePercentage(ourAgainst.fgm, ourAgainst.fga) / statsMaxValues["fg"], 
+				calculatePercentage(ourAgainst.tpm, ourAgainst.tpa) / statsMaxValues["tp"], 
+				calculatePercentage(ourAgainst.ftm, ourAgainst.fta) / statsMaxValues["ft"]
+			],
+			fill: true,
+			backgroundColor: `#ffef9630`,
+			borderColor: `#ffef96`,
+			pointBackgroundColor: `#ffef96`,
+			pointBorderColor: '#fff',
+			pointHoverBackgroundColor: '#fff',
+			pointHoverBorderColor: `#ffef96`
+		});
+	}
+	
+	const data = {
+		    labels: [
+			'PTS', 'PIR', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PF', 'FG %', '3PTS %', 'FT %'
+			],
+		    datasets: (document.getElementById('view-mode').value === "avg" ? avgDataset : datasets)
+		};
+	const config = {
+	    type: 'radar',
+	    data: data,
+	    options: {
+	        elements: {
+	            line: {
+	                borderWidth: 3
+	            }
+	        },
+	        plugins: {
+	            tooltip: {
+	                callbacks: {
+	                    label: function (context) {
+	                        let label = (context.label || '').split(' ')[0].toLowerCase();
+							switch(label){
+								case "3pts": label="tp"; break;
+							}
+	                        let value = context.raw;
+							const isAVG = document.getElementById('view-mode').value === "avg";
+							const fixedNumber = isAVG ? 1 : 0;
+							return (isAVG ? "" : (context.dataset.label + ' : ')) + (value * statsMaxValues[label]).toFixed(fixedNumber);
+	                    }
+	                }
+	            }
+	        },
+	        scales: {
+	            r: {
+					min: 0,
+	                suggestedMin: 0,
+	                suggestedMax: 1,
+					ticks: {
+						display: false,
+						beginAtZero: true,
+						stepSize: 0.2
+					},
+					pointLabels: {
+						display: true
+					}
+	            }
+	        }
+	    },
+	};
+	
+	window.playerChartRadar = new Chart(pcr, config);
+	const viewModeSelect = document.getElementById('view-mode');
+
+	viewModeSelect.addEventListener('change', function() {
+		const selectedMode = this.value;
+		
+		if (selectedMode === 'avg') {
+			window.playerChartRadar.data.datasets = avgDataset;
+		} else {
+			window.playerChartRadar.data.datasets = datasets;
+		}
+		
+		window.playerChartRadar.update();
+	});
 }
 
-function displayTeamTotalStats() {
-    const modal = document.getElementById('playerModal');
-    if (modal) modal.classList.remove('hidden');
 
-    let matchesMap = {}; 
-    const players = (window.currentTeamData.players || []);
-    
-    // Αν δεν υπάρχει επιλεγμένος παίκτης, παίρνουμε όλη την ομάδα
-    const targetData = window.currentPlayerData ? [window.currentPlayerData] : players;
-
-    targetData.forEach(pd => {
-        const playerGames = mapApiData(pd); // Χρήση της δικής σου μεθόδου
-        playerGames.forEach(game => {
-            const mId = game.matchId;
-            if (!matchesMap[mId]) {
-                matchesMap[mId] = { 
-                    matchId: mId, pts: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, 
-                    ftm: 0, fta: 0, pir: 0, shots: [] 
-                };
-            }
-            const m = matchesMap[mId];
-            m.pts += game.pts; m.pir += game.pir;
-            m.fgm += game.fgm; m.fga += game.fga;
-            m.tpm += game.tpm; m.tpa += game.tpa;
-            m.ftm += game.ftm; m.fta += game.fta;
-            m.shots = m.shots.concat(game.shots || []);
-        });
-    });
-
-    const matchesList = Object.values(matchesMap);
-    
-    // Κατασκευή του πίνακα
-    let html = `
-        <div class="team-header-info mb-2">
-            <h6>${window.currentPlayerData ? 'Αγώνες: ' + window.currentPlayerData.name : 'Ομαδικά Στατιστικά ανά Αγώνα'}</h6>
-            <small class="text-muted">Επιλέξτε έναν ή περισσότερους αγώνες για το Shot Chart</small>
-        </div>
-        <table id="modal-combined-table" class="display table table-sm table-hover border">
-            <thead>
-                <tr>
-                    <th>Match ID</th>
-                    <th>Πόντοι</th>
-                    <th>FG</th>
-                    <th>3P</th>
-                    <th>PIR</th>
-                </tr>
-            </thead>
-            <tbody>`;
-
-    matchesList.forEach(m => {
-        const isSelected = selectedMatchIds.includes(m.matchId.toString()) ? 'table-primary active' : '';
-        html += `
-            <tr class="match-row ${isSelected}" data-matchid="${m.matchId}" style="cursor:pointer">
-                <td>${m.matchId}</td>
-                <td>${m.pts}</td>
-                <td>${m.fgm}/${m.fga}</td>
-                <td>${m.tpm}/${m.tpa}</td>
-                <td>${m.pir.toFixed(1)}</td>
-            </tr>`;
-    });
-    html += `</tbody></table>`;
-    document.getElementById('player-stats-content').innerHTML = html;
-
+function hideStatistics() {
+    document.getElementById('statisticContainer').classList.add('hidden');
 }
 
 function updateShotChartFromMatches(matchesList) {
@@ -410,63 +735,16 @@ function updateShotChartFromMatches(matchesList) {
     }
 
     // Κλήση της δικής σου μεθόδου με το array format που περιμένει
-    initShotChart([{ "shots": finalShots }]);
+    refreshShotHeatmap([{ "shots": finalShots }]);
 }
-
 
 // --- 4. Χάρτης Δεδομένων & Προβολή Στατιστικών Παίκτη ---
 
-function mapApiData(data) {
-    // const playerDetails = {
-        // name: data.name,
-        // team: data.team.name,
-        // nickname: data.team.nickName,
-        // number: data.jersey,
-        // position: data.position,
-        // height: data.height
-    // };
-
-    const processedStats = data.stats.map((s, index) => {
-        const totalRebounds = s.offensiveRebounds + s.defensiveRebounds;
-        const totalFGM = s.twoPointsMade + s.threePointsMade;
-        const totalFGA = s.twoPointAttempts + s.threePointAttempts;
-        
-        return {
-            matchId: s.matchId,
-            round: s.round,
-            game: index + 1,
-            opponent: s.opponentTeamName,
-            date: new Date(s.matchDatetime).toLocaleDateString('el-GR'),
-            pts: s.points,
-            reb: totalRebounds, 
-            ast: s.assists,
-            stl: s.steals,
-            blk: s.blockedShots,
-            to: s.turnovers,
-            pf: s.personalFouls + s.technicalFouls + s.unsportsmanlikeFouls, 
-            pir: s.pir,
-            fgm: totalFGM, 
-            fga: totalFGA, 
-            tpm: s.threePointsMade,
-            tpa: s.threePointAttempts,
-            ftm: s.freeThrowsMade,
-            fta: s.freeThrowAttempts,
-            shots: s.throwPositions ? s.throwPositions.map(tp => ({ 
-                x: tp.x, 
-                y: tp.y, 
-                made: tp.throwStatus === 'made' 
-            })) : []
-        };
-    });
-
-    return processedStats;
-}
-
-function initShotChart(allGameStats) {
+function refreshShotHeatmap(allGameStats) {
 
 	
-    var containerId = 'shot-chart-container';
-    const contentDiv = document.getElementById('shot-stats-content');
+    var containerId = 'shot-map';
+    const contentDiv = document.getElementById('shot-map-container');
     const containerDiv = document.getElementById(containerId);
 	
     // Διαστάσεις γηπέδου (πρέπει να αντιστοιχούν με αυτές στο styles.css)
@@ -569,7 +847,6 @@ function initShotChart(allGameStats) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
  /**
