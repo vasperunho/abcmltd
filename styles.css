@@ -48,9 +48,11 @@ body {
 #modal-per-game-table th, #modal-per-game-table td, 
 #team-roster-table th, #team-roster-table td {
     border: 1px solid #ddd;
-    padding: 8px;
     text-align: left;
+	font-size: 0.8rem;
+	padding: 2px 16px 2px 4px;
 }
+table.dataTable thead > tr > th.dt-orderable-asc span.dt-column-order, table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order, table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order, table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order, table.dataTable thead > tr > td.dt-orderable-asc span.dt-column-order, table.dataTable thead > tr > td.dt-orderable-desc span.dt-column-order, table.dataTable thead > tr > td.dt-ordering-asc span.dt-column-order, table.dataTable thead > tr > td.dt-ordering-desc span.dt-column-order { right: 2px;}
 #player-stats-content th, #modal-per-game-table th, #team-roster-table th {
     background-color: #f2f2f2;
     color: #333;
@@ -83,15 +85,29 @@ body {
 
 #loading-message{background-color:rgba(0,0,0,.1);position:fixed; top:0; bottom:0; left:0; right:0; color: blue; display: flex;z-index:1000;}
 #loading-message .spinner-border{position: absolute;top: 50%;}
-.badge.bestof { margin-right:8px; border:1px solid #909090; color: #303030;background-size: 200% 200%;animation: gradient-shift 5s ease infinite;}
-#team-roster-table .badge.bestof { width: 40px;}
+.badge.bestof {
+	width: 22px;
+    height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    line-height: 20px;
+    padding: 0px;
+    font-size: 0.6rem;
+	margin-right:2px;
+	letter-spacing: 0.05rem;
+}
 .badge.badge-type-gold {
-	background: var(--gold-gradient);
+	background: #EFBF04;
 }
 .badge.badge-type-silver {
-	background: var(--silver-gradient);
+	background: #C4C4C4;
 }
 .badge.badge-type-bronze{
-	background: var(--bronze-gradient);
+	background: #CE8946;
 }
-.player-img{ height: 60px; width: 60px; background-size: cover; border-radius:50%;}
+.player-img{ height: 32px;
+    width: 32px;
+    background-size: 235%;
+    background-position: center 25%;
+    border-radius: 50%;
+}
