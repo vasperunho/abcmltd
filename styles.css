@@ -1,0 +1,155 @@
+:root {
+    --gold-gradient: linear-gradient(45deg, #A67C00, #FFDF8B, #EDCA66, #F0E7BF, #A67C00);
+    --silver-gradient: linear-gradient(45deg, #7B7B7B, #D8D8D8, #ABABAB, #EBEBEB, #7B7B7B);
+    --bronze-gradient: linear-gradient(45deg, #AD8A56, #cfa68c, #fed8b2, #cfa68c, #AD8A56);
+	.nav { --bs-nav-link-color: #c0c0c0; --bs-nav-link-hover-color: #909090;}
+}
+@keyframes gradient-shift {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+body {
+}
+.body-container { padding:20px;}
+.team-stats-container, .roster-container {
+}
+/* Στυλ για τον πίνακα Shot Chart */
+#shot-map {
+    display: flex; 
+}
+/* Στυλ για το ρόστερ (clickable rows) */
+#team-roster-table tbody tr {
+    cursor: pointer;
+}
+
+.statistic-content {
+	
+	width: 95% !important; /* Αυξάνουμε το πλάτος για να χωράνε οι πίνακες */
+    max-width: 1200px !important;
+}
+
+#player-stats-content table, 
+#modal-per-game-table, 
+#team-roster-table {
+    width: 100%;
+    border-collapse: collapse; /* Εξασφαλίζει ότι τα κελιά εφάπτονται */
+    background-color: white; /* Χρώμα φόντου */
+}
+#team-roster-content div.dt-container div.dt-layout-cell{ padding-top: 0px;}
+#player-stats-content th, #player-stats-content td, 
+#modal-per-game-table th, #modal-per-game-table td, 
+#team-roster-table th, #team-roster-table td {
+    border: 1px solid #ddd;
+    text-align: left;
+	font-size: 0.8rem;
+	padding: 2px 16px 2px 4px;
+}
+#player-stats-content td, 
+#modal-per-game-table td, 
+#team-roster-table td {
+	padding: 2px 12px 2px 4px;
+}
+#player-stats-content th, 
+#modal-per-game-table th, 
+#team-roster-table th {
+	padding: 6px 12px 6px 4px;
+}
+table.dataTable thead > tr > th.dt-orderable-asc span.dt-column-order, table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order, table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order, table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order, table.dataTable thead > tr > td.dt-orderable-asc span.dt-column-order, table.dataTable thead > tr > td.dt-orderable-desc span.dt-column-order, table.dataTable thead > tr > td.dt-ordering-asc span.dt-column-order, table.dataTable thead > tr > td.dt-ordering-desc span.dt-column-order { right: 4px;}
+#player-stats-content th, #modal-per-game-table th, #team-roster-table th {
+    background-color: #f2f2f2;
+    color: #333;
+    font-weight: bold;
+}
+#team-roster-table tr.active{ color: #fff !important; background-color: RGBA(var(--bs-success-rgb), var(--bs-bg-opacity, 1)) !important; }
+#team-roster-table tr.disabled{ color: #909090 !important; background-color: RGBA(var(--bs-light-rgb), var(--bs-bg-opacity, 0.3)) !important; }
+
+#modal-combined-table tr.active{ color: #fff !important; background-color: RGBA(var(--bs-success-rgb), var(--bs-bg-opacity, 1)) !important; }
+
+.player-chart-container { max-width: 300px; margin:0 auto;}
+
+/* Στυλ για τον πίνακα Shot Chart */
+#shot-map {
+	width: 800px; /* Σταθερό πλάτος για το heatmap */
+    height: 450px; 
+    margin: 0 auto; /* Κεντράρισμα */
+    position: relative;
+    background-color: #000033;
+    border-radius: 8px;
+    background-color: #000033; /* Σκούρο φόντο για το γήπεδο */
+	background:url("halfcourt.png") no-repeat center / 100% 100%;
+}
+#heatmapCanvas { 
+	width: 400px; /* Σταθερό πλάτος για το heatmap */
+    height: 400px; 
+    margin: 0 auto; /* Κεντράρισμα */
+    position: relative;
+    background-color: #000033;
+    border-radius: 8px;
+    background-color: #000033; /* Σκούρο φόντο για το γήπεδο */
+	background:url("halfcourt.png") no-repeat center / 100% 100%;
+    image-rendering: pixelated;
+}
+
+/* Στυλ για τη γραμμή μέσου όρου */
+#modal-combined-table tfoot td {
+    color: #0d47a1;
+    border-top: 2px solid #2196F3 !important;
+}
+.hidden{display:none!important;}
+
+.input-group-prepend ~select.form-select{ border-left:0;}
+.form-select:focus{ border-color: var(--bs-border-color); outline: 0; box-shadow: none;}
+.input-group-text{border-top-right-radius: 0; border-bottom-right-radius: 0; background:#fff; border-right:0px;}
+.nav-tabs,
+.nav-tabs .nav-link,
+.nav-tabs .nav-link:focus,
+.nav-tabs .nav-link:active,
+.nav-tabs .nav-link:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+h1{ font-size: 1.5rem;}
+.body-container{background:#f6f6f6;}
+.container-box{ padding: 1rem; background: #fff;}
+table.dataTable.stripe > tbody > tr:nth-child(odd) > *, table.dataTable.display > tbody > tr:nth-child(odd) > * {box-shadow: none;}
+table.dataTable.display > tbody > tr:nth-child(odd) > .sorting_1, table.dataTable.order-column.stripe > tbody > tr:nth-child(odd) > .sorting_1 {box-shadow: none;}
+#player-stats-content th, #player-stats-content td, #modal-per-game-table th, #modal-per-game-table td, #team-roster-table th, #team-roster-table td {border: none;}
+.dt-info{font-size: 0.8rem;}
+
+#loading-message{background-color:rgba(0,0,0,.1);position:fixed; top:0; bottom:0; left:0; right:0; color: blue; display: flex;z-index:1000;}
+#loading-message .spinner-border{position: absolute;top: 50%;}
+.badge.bestof {
+	width: 22px;
+    height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    line-height: 20px;
+    padding: 0px;
+    font-size: 0.6rem;
+	margin-right:2px;
+	letter-spacing: 0.05rem;
+}
+.badge.badge-type-gold {
+	background: #EFBF04;
+}
+.badge.badge-type-silver {
+	background: #C4C4C4;
+}
+.badge.badge-type-bronze{
+	background: #CE8946;
+}
+.player-img{ height: 32px;
+    width: 32px;
+    background-size: 235%;
+    background-position: center 25%;
+    border-radius: 50%;
+}

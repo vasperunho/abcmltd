@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1,minimum-scale=1,width=device-width,interactive-widget=resizes-content">
+    <title>ABCM B.C.</title>
+	<link rel="icon" href="images/logo.svg" sizes="any" type="image/svg+xml">
+	<link rel="icon" href="images/logo.png" sizes="any" type="image/png">
+    
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.css">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+<body>
+
+    <div class="body-container">
+        <h1>Commercial League Scouting</h1>
+        
+        <div class="team-stats-container row">
+				<div class="col-12">			
+					<div class="input-group mb-3">			
+						<div class="input-group-prepend">
+							<label class="input-group-text" for="basic-basket-icon">🏀</label>
+						</div>
+						<select id="team-select" class="form-select" onchange="loadTeamData(this.value)" placeholder="Επιλογή ομάδας" aria-label="team-select" aria-describedby="basic-basket-icon">
+							<option value="">-- Φορτώνει Ομάδες... --</option>
+						</select>
+					</div>
+			</div>
+			<div id="loading-message" class="justify-content-center">
+				<div class="spinner-border" role="status">
+					<span class="visually-hidden">Φορτώνει δεδομένα...</span>
+				</div>
+			</div>
+
+			<div id="team-stats-content" class="team-stats-container row hidden">
+				<div id="team-roster-content" class="roster-container col-xl-6 col-sm-12"  style="overflow-x: auto;">
+					<div class="container-box">
+						<table id="team-roster-table" class="display" style="width:100%">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th></th>
+									<th>Όνομα</th>
+									<th>Θέση</th>
+									<th>Ύψος</th>
+									<th>Αγώνες</th>
+									<th>PTS PG</th>
+									<th>PIR PG</th>
+									<th>Badges</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+						<p style="margin-top: 10px;">
+							<span class="badge bestof badge-type-gold" title="Gold">G</span>
+							<span class="badge bestof badge-type-silver" title="Silver">S</span>
+							<span class="badge bestof badge-type-bronze" title="Bronze">B</span>
+						</p>
+					</div>
+				</div>
+				
+    
+				<div id="statisticContainer" class=" col-xl-6 col-sm-12 hidden"  style="overflow-x: auto;">
+					<div class="statistic-content">
+					
+						<ul class="nav nav-tabs" id="statsTab" role="tablist">
+							<li class="nav-item" role="presentation">
+								<button class="nav-link active" id="statChart-tab" data-bs-toggle="tab" data-bs-target="#statChart" type="button" role="tab" aria-controls="statChart" aria-selected="true">Γράφημα</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="statTable-tab" data-bs-toggle="tab" data-bs-target="#statTable" type="button" role="tab" aria-controls="statTable" aria-selected="false">Λεπτομέρειες</button>
+							</li>
+						</ul>
+						<div class="container-box tab-content pt-4" id="myTabContent">
+							<div class="tab-pane fade show active" id="statChart" role="tabpanel" aria-labelledby="statChart-tab">
+								<div class="row">
+									<div class="col-xl-12 text-center">
+									<div class="player-chart-container">
+										<select class="form-select mb-2" id="view-mode">
+											<option value="avg">Μέσος Όρος (AVG)</option>
+											<option value="games">Αγώνες</option>
+										</select>
+										<canvas id="player-chart-radar"></canvas>
+									</div>
+									</div>
+								</div>
+							</div>
+							<div class="tab-pane fade" id="statTable" role="tabpanel" aria-labelledby="statTable-tab">
+								<div class="row">
+									<div class="col-xl-12">
+										<div id="player-stats-content">player-stats-content</div>
+									</div>
+								</div>
+							</div>
+						</div>		
+						<div class="row mt-2">	
+							<div class="col-xl-12">
+								<div id="canvas-container" class="container-box text-center">
+									<canvas id="heatmapCanvas"></canvas>
+								</div>
+							</div>
+						</div>				
+						<div class="row">	
+							<div class="col-xl-12">
+							</div>
+						</div>
+					
+					
+					
+					
+					</div>
+				</div>
+			</div>
+        </div>
+    </div>
+    
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+	<script src="heatmap.js"></script>
+    <script src="script.js"></script>
+    <script src="diffusionWorker.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>
