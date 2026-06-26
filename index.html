@@ -11,6 +11,7 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     
     <link rel="stylesheet" href="styles.css">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
 </head>
 <body>
@@ -35,85 +36,157 @@
 				</div>
 			</div>
 
-			<div id="team-stats-content" class="team-stats-container row hidden">
-				<div id="team-roster-content" class="roster-container col-xl-6 col-sm-12"  style="overflow-x: auto;">
-					<div class="container-box">
-						<table id="team-roster-table" class="display" style="width:100%">
-							<thead>
-								<tr>
-									<th>#</th>
-									<th></th>
-									<th>Όνομα</th>
-									<th>Θέση</th>
-									<th>Ύψος</th>
-									<th>Αγώνες</th>
-									<th>PTS PG</th>
-									<th>PIR PG</th>
-									<th>Badges</th>
-								</tr>
-							</thead>
-							<tbody></tbody>
-						</table>
-						<p style="margin-top: 10px;">
-							<span class="badge bestof badge-type-gold" title="Gold">G</span>
-							<span class="badge bestof badge-type-silver" title="Silver">S</span>
-							<span class="badge bestof badge-type-bronze" title="Bronze">B</span>
-						</p>
-					</div>
-				</div>
-				
-    
-				<div id="statisticContainer" class=" col-xl-6 col-sm-12 hidden"  style="overflow-x: auto;">
-					<div class="statistic-content">
-					
-						<ul class="nav nav-tabs" id="statsTab" role="tablist">
-							<li class="nav-item" role="presentation">
-								<button class="nav-link active" id="statChart-tab" data-bs-toggle="tab" data-bs-target="#statChart" type="button" role="tab" aria-controls="statChart" aria-selected="true">Γράφημα</button>
-							</li>
-							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="statTable-tab" data-bs-toggle="tab" data-bs-target="#statTable" type="button" role="tab" aria-controls="statTable" aria-selected="false">Λεπτομέρειες</button>
-							</li>
-						</ul>
-						<div class="container-box tab-content pt-4" id="myTabContent">
-							<div class="tab-pane fade show active" id="statChart" role="tabpanel" aria-labelledby="statChart-tab">
-								<div class="row">
-									<div class="col-xl-12 text-center">
-									<div class="player-chart-container">
-										<select class="form-select mb-2" id="view-mode">
-											<option value="avg">Μέσος Όρος (AVG)</option>
-											<option value="games">Αγώνες</option>
-										</select>
-										<canvas id="player-chart-radar"></canvas>
-									</div>
+			<div id="team-stats-content" class="team-stats-container hidden">
+				<ul class="nav nav-tabs" id="teamContentTab" role="tablist" style="margin-bottom: 15px;">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link active" id="games-tab" data-bs-toggle="tab" data-bs-target="#gamesContent" type="button" role="tab" aria-controls="gamesContent" aria-selected="true">Αγώνες</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" id="roster-tab" data-bs-toggle="tab" data-bs-target="#rosterContent" type="button" role="tab" aria-controls="rosterContent" aria-selected="false">Ροστερ</button>
+					</li>
+				</ul>
+
+				<div class="tab-content">
+					<!-- Games Tab -->
+					<div class="tab-pane fade show active" id="gamesContent" role="tabpanel" aria-labelledby="games-tab">
+						<div class="row">
+							<div class="col-12">
+								<div class="container-box average-stats-section">
+									<h5 class="average-stats-title">Μέσος Όρος Ομάδας</h5>
+									<div class="row mb-3">
+										<div class="col-12">
+											<table class="table table-sm" id="avg-stats-compare">
+												<thead>
+													<tr>
+														<th class="text-end">Ενεργητικό</th>
+														<th class="text-center">Στατιστικά</th>
+														<th class="text-start">Παθητικό</th>
+													</tr>
+												</thead>
+												<tbody></tbody>
+											</table>
+										</div>
 									</div>
 								</div>
-							</div>
-							<div class="tab-pane fade" id="statTable" role="tabpanel" aria-labelledby="statTable-tab">
-								<div class="row">
-									<div class="col-xl-12">
-										<div id="player-stats-content">player-stats-content</div>
-									</div>
-								</div>
-							</div>
-						</div>		
-						<div class="row mt-2">	
-							<div class="col-xl-12">
-								<div id="canvas-container" class="container-box text-center">
-									<canvas id="heatmapCanvas"></canvas>
-								</div>
-							</div>
-						</div>				
-						<div class="row">	
-							<div class="col-xl-12">
 							</div>
 						</div>
-					
-					
-					
-					
+
+						<div class="row mt-3">
+							<div class="col-12">
+								<div class="container-box">
+									<h5>Στατιστικά ανά Αγώνα</h5>
+									<table class="display" id="games-stats-table" style="width:100%">
+										<thead>
+											<tr>
+												<th>Αγώνας</th>
+												<th>Ημερομηνία</th>
+												<th>Αντίπαλος</th>
+												<th>Σκορ</th>
+												<th>Λεπτομέρειες</th>
+											</tr>
+										</thead>
+										<tbody></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Roster Tab -->
+					<div class="tab-pane fade" id="rosterContent" role="tabpanel" aria-labelledby="roster-tab">
+						<div class="row">
+							<div id="team-roster-content" class="roster-container col-xl-6 col-sm-12" style="overflow-x: auto;">
+								<div class="container-box">
+									<table id="team-roster-table" class="display" style="width:100%">
+										<thead>
+											<tr>
+												<th>#</th>
+												<th></th>
+												<th>Όνομα</th>
+												<th>Θέση</th>
+												<th>Ύψος</th>
+												<th>Αγώνες</th>
+												<th>PTS PG</th>
+												<th>PIR PG</th>
+												<th>Badges</th>
+											</tr>
+										</thead>
+										<tbody></tbody>
+									</table>
+									<p style="margin-top: 10px;">
+										<span class="badge bestof badge-type-gold" title="Gold">G</span>
+										<span class="badge bestof badge-type-silver" title="Silver">S</span>
+										<span class="badge bestof badge-type-bronze" title="Bronze">B</span>
+									</p>
+								</div>
+							</div>
+							
+							<div id="statisticContainer" class="col-xl-6 col-sm-12 hidden" style="overflow-x: auto;">
+								<div class="statistic-content">
+									<ul class="nav nav-tabs" id="statsTab" role="tablist">
+										<li class="nav-item" role="presentation">
+											<button class="nav-link active" id="statChart-tab" data-bs-toggle="tab" data-bs-target="#statChart" type="button" role="tab" aria-controls="statChart" aria-selected="true">Γράφημα</button>
+										</li>
+										<li class="nav-item" role="presentation">
+											<button class="nav-link" id="statTable-tab" data-bs-toggle="tab" data-bs-target="#statTable" type="button" role="tab" aria-controls="statTable" aria-selected="false">Λεπτομέρειες</button>
+										</li>
+									</ul>
+									<div class="container-box tab-content pt-4" id="myTabContent">
+										<div class="tab-pane fade show active" id="statChart" role="tabpanel" aria-labelledby="statChart-tab">
+											<div class="row">
+												<div class="col-xl-12 text-center">
+													<div class="player-chart-container">
+														<select class="form-select mb-2" id="view-mode">
+															<option value="avg">Μέσος Όρος (AVG)</option>
+															<option value="games">Αγώνες</option>
+														</select>
+														<canvas id="player-chart-radar"></canvas>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="tab-pane fade" id="statTable" role="tabpanel" aria-labelledby="statTable-tab">
+											<div class="row">
+												<div class="col-xl-12">
+													<div id="player-stats-content">player-stats-content</div>
+												</div>
+											</div>
+										</div>
+									</div>		
+									<div class="row mt-2">	
+										<div class="col-xl-12">
+											<div id="canvas-container" class="container-box text-center">
+												<canvas id="heatmapCanvas"></canvas>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
+        </div>
+    </div>
+    
+    <!-- Modal for Game Statistics -->
+    <div class="modal fade" id="gameStatsModal" tabindex="-1" aria-labelledby="gameStatsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title" id="gameStatsModalLabel">Commercial League</h5>
+                        <small id="gameRound">Αγωνιστική</small><br>
+                        <small id="gameDate">Ημερομηνία</small>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table game-stats-compare-table" id="modal-game-stats-table">
+                        <tbody id="modal-stats-body"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -121,9 +194,17 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 	<script src="heatmap.js"></script>
     <script src="script.js"></script>
     <script src="diffusionWorker.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+	<script>
+		// Initialize Select2 on team-select
+		$(document).ready(function() {
+		});
+	</script>
+	<style>
+	</style>
 </body>
 </html>

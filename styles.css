@@ -153,3 +153,204 @@ table.dataTable.display > tbody > tr:nth-child(odd) > .sorting_1, table.dataTabl
     background-position: center 25%;
     border-radius: 50%;
 }
+
+.input-group .select2-container {
+    width: auto !important;
+}
+
+.input-group .select2-container .select2-selection {
+    border-radius: 0;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    height: calc(1.5em + 0.75rem + 2px);
+    border-left: none;
+}
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    outline: none;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered ,
+.select2-container--default .select2-selection--single .select2-selection__placeholder{
+    line-height: calc(1.5em + 0.75rem + 2px);
+    display: block;
+}
+.opponent-cell {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+/* Average stats section */
+.average-stats-section {
+    border: none;
+    box-shadow: none;
+}
+
+.average-stats-title {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+#avg-stats-compare {
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+#avg-stats-compare thead th {
+    border: none !important;
+    font-weight: 600;
+}
+
+#avg-stats-compare tbody tr {
+    border: none;
+}
+
+#avg-stats-compare tbody td {
+    border: none !important;
+    padding: 8px 10px;
+    vertical-align: middle;
+}
+
+#avg-stats-compare .pct-bar-cell {
+    width: 100%;
+}
+
+#avg-stats-compare .pct-bar {
+    display: inline-block;
+    width: 100%;
+    max-width: 120px;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 999px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+#avg-stats-compare .pct-bar > span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 999px;
+}
+
+#avg-stats-compare .pct-bar-active {
+    direction: rtl;
+}
+
+#avg-stats-compare .pct-bar-active > span {
+    float: right;
+}
+
+/* Styles for Game Statistics Modal */
+#gameStatsModal .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+    text-align: center;
+    display: inline-block;
+}
+
+#gameStatsModal .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+#gameStatsModal .modal-body {
+    padding: 0;
+}
+
+.modal-team-name-row td {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2c3e50;
+    padding: 16px 8px 4px;
+}
+
+.modal-score-row td {
+    font-size: 2.2rem;
+}
+
+/* Game stats comparison table */
+.game-stats-compare-table {
+    margin: 0;
+    border-collapse: collapse;
+}
+
+.game-stats-compare-table tbody tr {
+    border: none;
+}
+
+.game-stats-compare-table tbody tr td {
+    border: none !important;
+    padding: 12px 8px;
+    vertical-align: middle;
+    max-width: 86px;
+}
+
+.game-stats-compare-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Progress bar styling */
+.pct-bar-wrapper {
+    display: inline-block;
+    width: 100%;
+    max-width: 140px;
+}
+
+.pct-bar-label {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2px;
+    text-align: center;
+}
+
+.pct-bar {
+    display: inline-block;
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 999px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.pct-bar > span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 999px;
+}
+
+.pct-bar-active {
+    direction: rtl;
+}
+
+.pct-bar-active > span {
+    float: right;
+}
+
+#gameStatsModal .btn-close {
+    filter: brightness(0) invert(1);
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1;
+}
+
+#games-stats-table tbody tr button {
+    transition: all 0.3s ease;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+#games-stats-table tbody tr button:hover {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+    transform: scale(1.1);
+}

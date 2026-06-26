@@ -38,6 +38,8 @@ function mapApiData(data) {
             opponent: s.opponentTeamName,
             date: new Date(s.matchDatetime).toLocaleDateString('el-GR'),
             pts: s.points,
+            orb: s.offensiveRebounds, 
+            drb: s.defensiveRebounds, 
             reb: totalRebounds, 
             ast: s.assists,
             stl: s.steals,
@@ -71,14 +73,21 @@ const calculatePercentage = (made, attempted) => {
 // --- 1. Φόρτωση Ομάδων στο Dropdown ---
 
 function updateMaxValues(targetObj, sourceStats) {
-    const keys = ['pts', 'pir', 'reb', 'ast', 'stl', 'blk', 'to', 'pf'];
+    const keys = ['pts', 'pir', 'reb', 'orb', 'drb', 'ast', 'stl', 'blk', 'to', 'pf'];
     keys.forEach(key => {
         targetObj[key] = Math.max(targetObj[key] || 0, sourceStats[key] || 0);
     });
 }
 
 async function loadTeamsDropdown() {
-    const select = document.getElementById('team-select');
+    const select = document.getElementById('team-select');    
+    $('#team-select').select2({
+        placeholder: '-- Επιλέξτε Ομάδα --',
+        allowClear: true
+    });
+    
+    // Adjust Select2 to work with input-group
+    $('#team-select').next('.select2-container').addClass('flex-grow-1');
     document.getElementById('loading-message').classList.remove("hidden");
 
     // const data = await fetchData(API_URLS.TEAMS_RANKING);
@@ -205,8 +214,248 @@ async function loadTeamData(teamId) {
 	refreshStatisticsTable(teamStats);
 	refreshStatisticsChart(teamStats);
     updateShotChartFromMatches(teamStats);
+	
+	// Εμφάνιση Στατιστικών Αγώνων
+	displayGamesStatistics(teamStats);
+	displayAverageStatistics(window.currentTeamData.statsAVG);
+	
 	document.getElementById('team-stats-content').classList.remove('hidden');
     document.getElementById('loading-message').classList.add("hidden");
+}
+
+// Συνάρτηση για εμφάνιση μέσου όρου στατιστικών
+function displayAverageStatistics(averageStats) {
+	if (!averageStats) return;
+	
+	const teamAverageStats = window.currentTeamData.statsAVG;
+	const opponentAverageStats = window.currentTeamData.opponent.statsAverages;
+	
+	if (!teamAverageStats || !opponentAverageStats) return;
+	
+	const statsRows = [
+		{ label: 'PTS', teamValue: teamAverageStats.pts, opponentValue: opponentAverageStats.pts },
+		{ label: 'AST', teamValue: teamAverageStats.ast, opponentValue: opponentAverageStats.ast },
+		{ label: 'ORB', teamValue: teamAverageStats.orb, opponentValue: opponentAverageStats.orb },
+		{ label: 'DRB', teamValue: teamAverageStats.drb, opponentValue: opponentAverageStats.drb },
+		{ label: 'STL', teamValue: teamAverageStats.stl, opponentValue: opponentAverageStats.stl },
+		{ label: 'BLK', teamValue: teamAverageStats.blk, opponentValue: opponentAverageStats.blk },
+		{ label: 'TO', teamValue: teamAverageStats.to, opponentValue: opponentAverageStats.to },
+		{ label: 'PF', teamValue: teamAverageStats.pf, opponentValue: opponentAverageStats.pf },
+		{ label: 'PIR', teamValue: teamAverageStats.pir, opponentValue: opponentAverageStats.pir },
+		{ label: 'FG%', teamValue: calculatePercentage(teamAverageStats.fgm, teamAverageStats.fga), opponentValue: calculatePercentage(opponentAverageStats.fgm, opponentAverageStats.fga) },
+		{ label: '3P%', teamValue: calculatePercentage(teamAverageStats.tpm, teamAverageStats.tpa), opponentValue: calculatePercentage(opponentAverageStats.tpm, opponentAverageStats.tpa) },
+		{ label: 'FT%', teamValue: calculatePercentage(teamAverageStats.ftm, teamAverageStats.fta), opponentValue: calculatePercentage(opponentAverageStats.ftm, opponentAverageStats.fta) }
+	];
+	
+	const avgStatsTable = document.getElementById('avg-stats-compare').querySelector('tbody');
+	avgStatsTable.innerHTML = '';
+	const formatStatValue = value => parseFloat(value || 0).toFixed(1);
+	
+	statsRows.forEach(stat => {
+		const row = document.createElement('tr');
+		const isPercentage = stat.label.includes('%');
+		const teamValue = isPercentage ? `${formatStatValue(stat.teamValue)}%` : formatStatValue(stat.teamValue);
+		const opponentValue = isPercentage ? `${formatStatValue(stat.opponentValue)}%` : formatStatValue(stat.opponentValue);
+		const teamBar = isPercentage ? `<span class="pct-bar pct-bar-active"><span style="width:${Math.min(100, Math.max(0, stat.teamValue))}%"></span></span>` : '';
+		const opponentBar = isPercentage ? `<span class="pct-bar"><span style="width:${Math.min(100, Math.max(0, stat.opponentValue))}%"></span></span>` : '';
+		row.innerHTML = `
+			<td class="text-end"><strong>${teamValue}</strong>${isPercentage ? `<div class="mt-1 d-flex justify-content-end">${teamBar}</div>` : ''}</td>
+			<td class="text-center">${stat.label}</td>
+			<td class="text-start"><strong>${opponentValue}</strong>${isPercentage ? `<div class="mt-1 d-flex justify-content-start">${opponentBar}</div>` : ''}</td>
+		`;
+		avgStatsTable.appendChild(row);
+	});
+}
+
+// Συνάρτηση για σύγκριση στατιστικών και επιστροφή χρώματος
+function getStatColor(value, compareValue, isOpponent = false) {
+	const val = parseFloat(value);
+	const cmp = parseFloat(compareValue);
+
+	if (val > cmp) {
+		return isOpponent ? 'style="background-color: #f8d7da;"' : 'style="background-color: #d4f8d4;"';
+	}
+	if (val === cmp) return 'style="background-color: #ffd69b;"'; // Orange
+	return '';
+}
+
+// Συνάρτηση για εμφάνιση στατιστικών ανά αγώνα
+function displayGamesStatistics(teamStats) {
+	if (!teamStats || teamStats.length === 0) return;
+	
+	// Destroy existing datatable if it exists
+	if ($.fn.DataTable.isDataTable('#games-stats-table')) {
+		$('#games-stats-table').DataTable().destroy();
+		$('#games-stats-table tbody').empty();
+	}
+	
+	const tbody = document.getElementById('games-stats-table').querySelector('tbody');
+	tbody.innerHTML = '';
+	
+	teamStats.forEach(game => {
+		const opponentStats = game.opponentStats || {};
+		const teamScore = Math.round(game.pts);
+		const opponentScore = Math.round(opponentStats.pts || 0);
+		const scoreDisplay = `${teamScore} - ${opponentScore}`;
+		const parsedDate = new Date(game.date);
+		const formattedDate = !isNaN(parsedDate.getTime())
+			? parsedDate.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+			: game.date;
+		
+		const row = document.createElement('tr');
+		row.style.cursor = 'pointer';
+		row.onclick = () => showGameStatsModal(teamStats.indexOf(game));
+		row.innerHTML = `
+			<td>${game.game}</td>
+			<td data-order="${parsedDate.getTime()}" data-search="${formattedDate}">${formattedDate}</td>
+			<td>${game.opponent}</td>
+			<td style="text-align: center; font-weight: bold;">${scoreDisplay}</td>
+			<td style="text-align: center;">
+				<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); showGameStatsModal(${teamStats.indexOf(game)})" title="Δείτε τα στατιστικά">
+					<i class="bi bi-graph-up"></i> 📊
+				</button>
+			</td>
+		`;
+		tbody.appendChild(row);
+	});
+	
+	// Initialize DataTable with 100 entries per page and hide "entries per page" text
+	$('#games-stats-table').DataTable({
+		paging: true,
+		searching: true,
+		info: true,
+		lengthChange: false, // Hide entries per page dropdown
+		pageLength: 100, // Show 100 entries by default
+		order: [[1, 'desc']],
+		language: {
+			search: '_INPUT_',
+			searchPlaceholder: 'Αναζήτηση',
+			info: 'Εμφάνιση _START_ έως _END_ από _TOTAL_ εγγραφές',
+			zeroRecords: 'Δεν βρέθηκαν εγγραφές',
+			infoEmpty: 'Εμφάνιση 0 έως 0 από 0 εγγραφές',
+			paginate: {
+				first: 'Πρώτο',
+				previous: 'Προηγούμενο',
+				next: 'Επόμενο',
+				last: 'Τελευταίο'
+			},
+			lengthMenu: '' // Hide "entries per page" text
+		}
+	});
+}
+
+// Συνάρτηση για εμφάνιση modal με στατιστικά αγώνα
+function showGameStatsModal(gameIndex) {
+	const teamStats = mapTeamTotalStats(window.currentTeamData.players);
+	const game = teamStats[gameIndex];
+	
+	if (!game) return;
+	
+	const homeTeamName = window.currentTeamData.name;
+	const awayTeamName = game.opponent;
+	
+	// Ενημέρωση τίτλου και πληροφοριών του modal
+	const modalTitle = document.getElementById('gameStatsModalLabel');
+	modalTitle.textContent = 'Commercial League';
+	
+	document.getElementById('gameRound').textContent = `Αγωνιστική: ${game.round || '-'}`;
+	document.getElementById('gameDate').textContent = `${game.date}`;
+	
+	// Δημιουργία σειρών στατιστικών
+	const statsBody = document.getElementById('modal-stats-body');
+	statsBody.innerHTML = '';
+	
+	const stats = [
+		{ label: 'PTS', key: 'pts', format: 'number' },
+		{ label: 'REB', key: 'reb', format: 'number' },
+		{ label: 'ORB', key: 'orb', format: 'number' },
+		{ label: 'DRB', key: 'drb', format: 'number' },
+		{ label: 'AST', key: 'ast', format: 'number' },
+		{ label: 'STL', key: 'stl', format: 'number' },
+		{ label: 'BLK', key: 'blk', format: 'number' },
+		{ label: 'TO', key: 'to', format: 'number' },
+		{ label: 'PF', key: 'pf', format: 'number' },
+		{ label: 'PIR', key: 'pir', format: 'number' },
+		{ label: 'FG%', key: 'fg', format: 'percentage' },
+		{ label: '3P%', key: 'tp', format: 'percentage' },
+		{ label: 'FT%', key: 'ft', format: 'percentage' }
+	];
+	
+	const opponentStats = game.opponentStats || {};
+	const formatModalValue = (value, stat) => {
+		const numericValue = parseFloat(value || 0);
+		if (stat.format === 'percentage') return `${numericValue.toFixed(1)}%`;
+		if (stat.key === 'pir') return numericValue.toFixed(1);
+		return Math.round(numericValue).toString();
+	};
+	const getStatValue = (stat, source) => {
+		if (stat.key === 'fg') return calculatePercentage(source.fgm, source.fga);
+		if (stat.key === 'tp') return calculatePercentage(source.tpm, source.tpa);
+		if (stat.key === 'ft') return calculatePercentage(source.ftm, source.fta);
+		return source[stat.key] || 0;
+	};
+	
+	stats.forEach(stat => {
+		if (stat.label === 'PTS') {
+			const teamNameRow = document.createElement('tr');
+			teamNameRow.classList.add('modal-team-name-row');
+			teamNameRow.innerHTML = `
+				<td class="text-end"><strong>${homeTeamName}</strong></td>
+				<td class="text-center">&nbsp;</td>
+				<td class="text-start"><strong>${awayTeamName}</strong></td>
+			`;
+			statsBody.appendChild(teamNameRow);
+		}
+
+		const row = document.createElement('tr');
+		const homeValue = getStatValue(stat, game);
+		const awayValue = getStatValue(stat, opponentStats);
+		const labelText = stat.label === 'PTS' ? '<span style="font-size: 1.1rem; font-weight: 600;">-</span>' : stat.label;
+		
+		if (stat.label === 'PTS') {
+			row.classList.add('modal-score-row');
+		}
+		
+		if (stat.format === 'percentage') {
+			const homePercent = parseFloat(homeValue) || 0;
+			const awayPercent = parseFloat(awayValue) || 0;
+			
+			const homeBarHtml = `
+				<div class="pct-bar-wrapper">
+					<div class="pct-bar-label"><strong>${homePercent.toFixed(1)}%</strong></div>
+					<div class="pct-bar pct-bar-active">
+						<span style="width:${Math.min(100, Math.max(0, homePercent))}%"></span>
+					</div>
+				</div>
+			`;
+			const awayBarHtml = `
+				<div class="pct-bar-wrapper">
+					<div class="pct-bar-label"><strong>${awayPercent.toFixed(1)}%</strong></div>
+					<div class="pct-bar">
+						<span style="width:${Math.min(100, Math.max(0, awayPercent))}%"></span>
+					</div>
+				</div>
+			`;
+			
+			row.innerHTML = `
+				<td class="text-end">${homeBarHtml}</td>
+				<td class="text-center" style="font-size: ${stat.label === 'PTS' ? '1.1rem' : 'inherit'}; font-weight: ${stat.label === 'PTS' ? '600' : '400'};">${labelText}</td>
+				<td class="text-start">${awayBarHtml}</td>
+			`;
+		} else {
+			row.innerHTML = `
+				<td class="text-end"><strong>${formatModalValue(homeValue, stat)}</strong></td>
+				<td class="text-center" style="font-size: ${stat.label === 'PTS' ? '1.1rem' : 'inherit'}; font-weight: ${stat.label === 'PTS' ? '600' : '400'};">${labelText}</td>
+				<td class="text-start"><strong>${formatModalValue(awayValue, stat)}</strong></td>
+			`;
+		}
+		
+		statsBody.appendChild(row);
+	});
+	
+	// Εμφάνιση modal
+	const modal = new bootstrap.Modal(document.getElementById('gameStatsModal'));
+	modal.show();
 }
 
 function mapTeamTotalStats(playersData) {
@@ -225,7 +474,7 @@ function mapTeamTotalStats(playersData) {
             // Αν δεν υπάρχει ακόμα ο αγώνας στο map, δημιούργησέ τον
             if (!matchesMap[mId]) {
                 matchesMap[mId] = { 
-                    matchId: mId, round: s.round, game: s.game, date: s.date, opponent: s.opponent, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, 
+                    matchId: mId, round: s.round, game: s.game, date: s.date, opponent: s.opponent, pts: 0, reb: 0, orb: 0, drb: 0, ast: 0, stl: 0, blk: 0, 
                     to: 0, pf: 0, pir: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, 
                     ftm: 0, fta: 0, shots: [], players: 0
                 };
@@ -233,7 +482,7 @@ function mapTeamTotalStats(playersData) {
 
             // Πρόσθεση στατιστικών παίκτη στα συνολικά του συγκεκριμένου αγώνα
             const m = matchesMap[mId];
-            m.pts += s.pts; m.reb += s.reb; m.ast += s.ast;
+            m.pts += s.pts; m.reb += s.reb; m.orb += s.orb; m.drb += s.drb; m.ast += s.ast;
             m.stl += s.stl; m.blk += s.blk; m.to += s.to; m.pf += s.pf;
             m.pir += s.pir; m.fgm += s.fgm; m.fga += s.fga;
             m.tpm += s.tpm; m.tpa += s.tpa; m.ftm += s.ftm; m.fta += s.fta;
@@ -248,6 +497,9 @@ function mapTeamTotalStats(playersData) {
 	result.map(m => { 
 		m.pir = parseFloat((m.pir / m.players).toFixed(1)); 
 		m.pts = parseFloat(m.pts.toFixed(1)); 
+		m.reb = parseFloat(m.reb.toFixed(1)); 
+		m.orb = parseFloat(m.orb.toFixed(1)); 
+		m.drb = parseFloat(m.drb.toFixed(1)); 
 		m.ast = parseFloat(m.ast.toFixed(1)); 
 		m.stl = parseFloat(m.stl.toFixed(1)); 
 		m.blk = parseFloat(m.blk.toFixed(1)); 
@@ -256,6 +508,39 @@ function mapTeamTotalStats(playersData) {
 		m.fg = parseFloat((m.fgm / m.fga).toFixed(1)); 
 		m.tp = parseFloat((m.tpm / m.tpa).toFixed(1)); 
 		m.ft = parseFloat((m.ftm / m.fta).toFixed(1)); 
+	});
+
+	// Add opponent stats to each game
+	result.forEach(game => {
+		const opponentId = (Object.values(window.teamsData).find(team => { return team.name === game.opponent; }) || {}).id;
+		const matchId = game.matchId;
+
+		const opponentTeam = window.teamsData[opponentId];
+
+		if (opponentTeam) {
+			const opponentGameStats = opponentTeam.stats.find(s => s.matchId === matchId);
+			
+			if (opponentGameStats) {
+				game.opponentStats = {
+					pts: opponentGameStats.pts || 0,
+					reb: opponentGameStats.reb || 0,
+					orb: opponentGameStats.orb || 0,
+					drb: opponentGameStats.drb || 0,
+					ast: opponentGameStats.ast || 0,
+					stl: opponentGameStats.stl || 0,
+					blk: opponentGameStats.blk || 0,
+					to: opponentGameStats.to || 0,
+					pf: opponentGameStats.pf || 0,
+					pir: opponentGameStats.pir || 0,
+					fgm: opponentGameStats.fgm || 0,
+					fga: opponentGameStats.fga || 0,
+					tpm: opponentGameStats.tpm || 0,
+					tpa: opponentGameStats.tpa || 0,
+					ftm: opponentGameStats.ftm || 0,
+					fta: opponentGameStats.fta || 0
+				};
+			}
+		}
 	});
 
     // Μετατροπή του map σε πίνακα για να τον εμφανίσουμε
@@ -1123,8 +1408,8 @@ function applyOptimizedDiffusion(initialGrid, weights) {
         }
     }
 	
-	console.log(gridA);
-	console.log(gridB);
+	//console.log(gridA);
+	//console.log(gridB);
 
     // 2. Υπολογισμός τελικού πίνακα C (Normalization)
     let gridC = Array.from({ length: rows }, () => new Float64Array(cols));
