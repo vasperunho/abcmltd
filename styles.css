@@ -154,6 +154,25 @@ table.dataTable.display > tbody > tr:nth-child(odd) > .sorting_1, table.dataTabl
     border-radius: 50%;
 }
 
+.player-jersey{
+    position: absolute;
+    top: 80%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    line-height: 36px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: inline-block;
+    text-align: center;
+    border-radius: 50%;
+    border: 1px solid #99999999;
+    background: #ffffff99;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin: 0;
+}
+
 .input-group .select2-container {
     width: auto !important;
 }

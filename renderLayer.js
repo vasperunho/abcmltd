@@ -203,7 +203,7 @@ function renderTopPlayersSection() {
             }
         };
 
-        const sorted = players.map(p => ({ id: p.id, name: p.name, jersey: p.jersey, image: (p.image ? "https://storage.googleapis.com/" + p.image : getImage(p.id, p.name)), value: getPlayerValue(p) }))
+        const sorted = players.map(p => ({ id: p.id, name: p.name, jersey: p.jersey || "-", image: (p.image ? "https://storage.googleapis.com/" + p.image : getImage(p.id, p.name)), value: getPlayerValue(p) }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
 
@@ -223,8 +223,9 @@ function renderTopPlayersSection() {
                             else valueDisplay = p.value.toFixed(1);
                             return (
                             idx===0 ?
-                            `<div class="row" style='justify-content: center;'><div class="player-img" style="backgrounf-color:#f0f0f0;background-image:url('${p.image}');width: 100px;height: 100px;background-size: 130%;"></div></div>` +
-                            `<div class="row"><div class="col-2">${p.jersey}</div><div class="col-6 text center">${p.name}</div><div class="col-4 text-end"><strong>${valueDisplay}</strong></div></div><hr />` :
+                            `<div class="row" style='justify-content: center; position: relative;'><div class="player-img" style="background-color:#f0f0f0; background-image:url('${p.image}'); width: 100px; height: 100px; background-size: 130%;"></div><div class="player-jersey" style="position: absolute; top: 80%; left: 50%; transform: translate(-50%, -50%); font-size:1.2rem; font-weight: 700;">${p.jersey}</div></div>` +
+                            `<div class="row"><div class="col-12 text-center py-2" style="font-size: 1.25rem;">${p.name}</div></div>`+
+                            `<div class="row"><div class="col-12 text-center pb-2" style="font-size: 1.25rem;"><strong>${valueDisplay}</strong></div><hr />` :
                             `<div class="row"><div class="col-2">${p.jersey}</div><div class="col-6 text center">${p.name}</div><div class="col-4 text-end"><strong>${valueDisplay}</strong></div></div>`
                         )}
                         ).join('')}
@@ -239,7 +240,7 @@ function renderTopPlayersSection() {
 }
 
 function showGameStatsModal(gameIndex) {
-    const teamStats = mapTeamTotalStats(basketball.currentTeamData.players);
+    const teamStats = basketball.currentTeamData.stats || [];
     const game = teamStats[gameIndex];
 
     if (!game) return;
@@ -1045,7 +1046,7 @@ function renderHeatmap(data, opt) {
 
 function renderTeamOverview() {
     refreshTeamRosterTable();
-    const teamStats = mapTeamTotalStats();
+    const teamStats = basketball.currentTeamData.stats;
     renderTeamAverageChart(teamStats);
     renderStatisticsTable(teamStats);
     renderStatisticsChart(teamStats);
