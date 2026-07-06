@@ -183,7 +183,7 @@ table.dataTable.display > tbody > tr:nth-child(odd) > .sorting_1, table.dataTabl
     box-shadow: none;
 }
 
-.average-stats-title {
+.average-stats-title, .stats-per-game-title {
     text-align: center;
     margin-bottom: 1rem;
     font-weight: 600;
@@ -237,6 +237,36 @@ table.dataTable.display > tbody > tr:nth-child(odd) > .sorting_1, table.dataTabl
 
 #avg-stats-compare .pct-bar-active > span {
     float: right;
+}
+
+#avg-stats-compare .avg-stat-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#avg-stats-compare .avg-stat-primary {
+    font-weight: 600;
+}
+
+#avg-stats-compare .avg-stat-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+#avg-stats-compare .avg-stat-secondary {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+#avg-stats-compare .avg-stat-better {
+    color: #198754;
+}
+
+#avg-stats-compare .avg-stat-worse {
+    color: #dc3545;
 }
 
 /* Styles for Game Statistics Modal */
